@@ -1,0 +1,9 @@
+streamlit
+chromadb
+ollama
+langchain
+langchain-community
+langchain-ollama
+pymupdf
+python-docx
+python-dotenv
