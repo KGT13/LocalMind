@@ -1,0 +1,183 @@
+Here’s the recommended front-end functionality outline for LocalMind, optimized for Stitch design.
+
+LocalMind Front-End Interface
+1. Home / Dashboard
+
+Purpose: simple entry point.
+
+Should include:
+
+App name: LocalMind
+Tagline: AI That Stays With You
+Button: Upload Documents
+Button: Ask a Question
+Recent documents list
+Knowledge base status:
+Number of uploaded documents
+Number of indexed chunks
+Last updated date
+2. Document Upload Page
+
+Core functionality:
+
+Drag-and-drop upload area
+File picker button
+Supported file types:
+PDF
+DOCX
+TXT
+Upload progress indicator
+Processing status:
+Uploading
+Extracting text
+Chunking document
+Creating embeddings
+Stored in knowledge base
+Confirmation message when complete
+
+Optional:
+
+Document category/tag field
+Delete uploaded document button
+3. Document Library
+
+Purpose: show all stored knowledge sources.
+
+Should include:
+
+List or card view of uploaded documents
+File name
+File type
+Upload date
+Processing status
+Number of text chunks
+Actions:
+View summary
+Ask questions about this document
+Delete document
+
+This page helps demonstrate Document Ingestion & Knowledge Storage.
+
+4. AI Q&A Page
+
+This is the most important screen.
+
+Core elements:
+
+Large question input box
+Button: Ask LocalMind
+Option to search:
+All documents
+Selected document
+AI answer area
+Citation section under answer
+Source references showing:
+Document name
+Page number or section
+Relevant excerpt
+
+Example citation display:
+
+Source: AI_Ethics_Report.pdf, Page 4
+“Responsible AI systems should prioritize transparency and accountability.”
+
+This directly supports the 40-point grading category.
+
+5. Semantic Search Page
+
+Purpose: show that the system understands meaning, not just keywords.
+
+Core elements:
+
+Search bar
+Search results ranked by relevance
+Each result should show:
+Document name
+Relevance score
+Short text snippet
+Button: “Use in Q&A”
+Button: “View source”
+
+This helps demonstrate semantic retrieval.
+
+6. Summary Page
+
+Purpose: generate document summaries.
+
+Core elements:
+
+Select document dropdown
+Button: Generate Summary
+Summary output options:
+Short summary
+Detailed summary
+Key points
+Action items
+Copy summary button
+
+This supports the Summaries & Semantic Retrieval category.
+
+7. Study / Quiz Mode
+
+Keep this simple because it is only worth 10 points.
+
+Core elements:
+
+Select document
+Button: Generate Quiz
+Options:
+Multiple choice
+True/false
+Short answer
+Display generated questions
+Show answer button
+Score summary
+
+Optional:
+
+Generate flashcards
+8. Settings Page
+
+Keep minimal.
+
+Should include:
+
+Model selection:
+Local model
+Cloud model, if applicable
+Knowledge base management:
+Clear all documents
+Rebuild index
+Privacy message:
+“Your documents stay local unless cloud processing is enabled.”
+Recommended Navigation Menu
+
+Use a clean sidebar or top navigation:
+
+Dashboard
+Upload
+Library
+Ask
+Search
+Summarize
+Quiz Mode
+Settings
+Best Stitch Prompt
+
+Use this prompt in Stitch:
+
+Design a clean, modern web app interface for “LocalMind – AI That Stays With You,” a privacy-focused AI knowledge assistant. The app lets users upload documents, build a local knowledge base, ask questions with citations, perform semantic search, generate summaries, and create simple quizzes from uploaded documents.
+
+Create screens for:
+1. Dashboard
+2. Document Upload
+3. Document Library
+4. AI Q&A with citations
+5. Semantic Search
+6. Document Summary
+7. Study / Quiz Mode
+8. Settings
+
+Use a polished academic and professional style, suitable for a college AI capstone presentation. Include a calm color palette, sidebar navigation, document cards, chat-style Q&A area, citation cards, upload progress indicators, and clear privacy-focused messaging.
+
+This front end should visually prove the project meets the professor’s grading categories.
