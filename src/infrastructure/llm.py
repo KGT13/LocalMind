@@ -20,7 +20,7 @@ def generate(prompt, system_prompt=""):
     messages.append({"role": "user",   "content": prompt})
     
         
-    response = client.chat(model=CHAT_MODEL, messages=messages)
+    response = client.chat(model=CHAT_MODEL, messages=messages, think=False)
  
         
     return response.message.content
@@ -36,7 +36,7 @@ def generate_streaming(prompt, system_prompt=""):
     messages.append({"role": "user",   "content": prompt})
     
         
-    response = client.chat(model=CHAT_MODEL, messages=messages, stream=True)
+    response = client.chat(model=CHAT_MODEL, messages=messages, stream=True, think=False)
     for chunk in response:
         yield chunk.message.content
 
@@ -51,7 +51,7 @@ def generate_json(prompt, system_prompt=""):
     messages.append({"role": "user",   "content": prompt})        
     
     for attempt in range(JSON_MAX_RETRIES):
-        response = client.chat(model=CHAT_MODEL, messages=messages, format="json")
+        response = client.chat(model=CHAT_MODEL, messages=messages, format="json", think=False)
         try:
             data = json.loads(response.message.content)
             return data
