@@ -6,6 +6,7 @@ Main Streamlit application entry point (Dashboard / Home).
 import streamlit as st
 from src.infrastructure import database
 from src.core import ingestion
+from src.utils import add_logo
 
 # ── Page config ──────────────────────────────────────────────────────────
 st.set_page_config(
@@ -29,7 +30,7 @@ load_css()
 
 # ── Sidebar Navigation ──────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;"><div style="background-color: #142175; padding: 6px; border-radius: 8px; display: flex; align-items: center;"><span class="material-symbols-outlined" style="color: white; font-size: 24px;">psychology</span></div><span style="font-size: 1.5rem; font-weight: 800; color: #142175; letter-spacing: -0.5px;">LocalMind</span></div><p style="font-size: 0.85rem; color: #505f76; font-weight: 500; margin-left: 2px; margin-bottom: 24px;">AI That Stays With You</p>', unsafe_allow_html=True)
+    add_logo()  # <-- This replaces the block above to show your real logo image
     st.page_link("app.py", label="Dashboard", icon=":material/dashboard:", disabled=("dashboard" == "dashboard"))
     st.page_link("pages/Upload.py", label="Upload", icon=":material/upload_file:", disabled=("dashboard" == "upload"))
     st.page_link("pages/Library.py", label="Library", icon=":material/database:", disabled=("dashboard" == "library"))
