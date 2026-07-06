@@ -1,7 +1,13 @@
 venv/
-  __pycache__/
-  *.pyc
-  data/knowledge_base/
-  data/quiz_scores.json
-  .env
-  .DS_Store
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+data/knowledge_base/
+backend/data/knowledge_base/
+data/quiz_scores.json
+backend/data/quiz_scores.json
+.env
+.DS_Store
+temp_uploads/
+backend/temp_uploads/
