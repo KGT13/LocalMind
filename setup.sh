@@ -3,48 +3,99 @@ set -e
 
 echo "============================================"
 echo "  LocalMind - First-time setup"
+echo "  (installs everything needed automatically)"
 echo "============================================"
 echo
 
-# ── 1. Python virtual environment (backend) ────────────────────────────
-if [ ! -d "venv" ]; then
-    echo "[1/6] Creating Python virtual environment..."
-    python3 -m venv venv
-else
-    echo "[1/6] Virtual environment already exists, skipping."
+OS_TYPE="$(uname -s)"
+
+# ── 0. Homebrew (macOS package manager) ──────────────────────────────────
+if [ "$OS_TYPE" = "Darwin" ]; then
+    if ! command -v brew &> /dev/null; then
+        echo "[Check] Homebrew not found. Installing Homebrew..."
+        echo "You may be asked for your Mac password - this is normal."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+    else
+        echo "[Check] Homebrew found."
+    fi
 fi
 
-echo "[2/6] Activating virtual environment and installing backend dependencies..."
+# ── 1. Python ─────────────────────────────────────────────────────────────
+echo "[Check] Python3..."
+if ! command -v python3 &> /dev/null; then
+    echo "  Not found. Installing..."
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        brew install python
+    else
+        sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip
+    fi
+else
+    echo "  Found."
+fi
+
+# ── 2. Node.js ────────────────────────────────────────────────────────────
+echo "[Check] Node.js..."
+if ! command -v node &> /dev/null; then
+    echo "  Not found. Installing..."
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        brew install node
+    else
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+else
+    echo "  Found."
+fi
+
+# ── 3. Ollama ─────────────────────────────────────────────────────────────
+echo "[Check] Ollama..."
+if ! command -v ollama &> /dev/null; then
+    echo "  Not found. Installing..."
+    if [ "$OS_TYPE" = "Darwin" ]; then
+        brew install ollama
+    else
+        curl -fsSL https://ollama.com/install.sh | sh
+    fi
+else
+    echo "  Found."
+fi
+
+echo
+echo "All prerequisites are installed. Continuing setup..."
+echo
+
+# ── 4. Python virtual environment (backend) ──────────────────────────────
+if [ ! -d "venv" ]; then
+    echo "[1/5] Creating Python virtual environment..."
+    python3 -m venv venv
+else
+    echo "[1/5] Virtual environment already exists, skipping."
+fi
+
+echo "[2/5] Installing backend dependencies..."
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# ── 2. Ollama models ────────────────────────────────────────────────────
-echo "[3/6] Checking Ollama is installed..."
-if ! command -v ollama &> /dev/null; then
-    echo
-    echo "ERROR: Ollama was not found on PATH."
-    echo "Download and install it from https://ollama.com then re-run this script."
-    exit 1
+# ── 5. Ollama models ──────────────────────────────────────────────────────
+echo "[3/5] Pulling required AI models - this can take several minutes..."
+# Make sure the Ollama background service is running before pulling models
+if [ "$OS_TYPE" = "Darwin" ]; then
+    brew services start ollama 2>/dev/null || ollama serve > /tmp/localmind_ollama.log 2>&1 &
+else
+    (ollama serve > /tmp/localmind_ollama.log 2>&1 &) 
 fi
-
-echo "[4/6] Pulling required AI models - this can take several minutes..."
+sleep 3
 ollama pull qwen3.5:9b
 ollama pull nomic-embed-text
 
-# ── 3. Frontend dependencies ────────────────────────────────────────────
-echo "[5/6] Installing frontend dependencies (npm)..."
-if ! command -v npm &> /dev/null; then
-    echo
-    echo "ERROR: npm was not found on PATH."
-    echo "Install Node.js from https://nodejs.org then re-run this script."
-    exit 1
-fi
-
+# ── 6. Frontend dependencies ──────────────────────────────────────────────
+echo "[4/5] Installing frontend dependencies..."
 (cd frontend && npm install)
 
-# ── 4. Data folders ──────────────────────────────────────────────────────
-echo "[6/6] Preparing data folders..."
+# ── 7. Data folders ───────────────────────────────────────────────────────
+echo "[5/5] Preparing data folders..."
 mkdir -p backend/data
 mkdir -p backend/temp_uploads
 if [ ! -f "backend/data/quiz_scores.json" ]; then
