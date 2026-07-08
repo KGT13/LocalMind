@@ -38,6 +38,11 @@ class CompareRequest(BaseModel):
     doc_a: str
     doc_b: str
 
+class NoteRequest(BaseModel):
+    text: str
+    source_label: str
+    bypass_validation: bool = False
+
 class QuizGenerateRequest(BaseModel):
     document: str
     num_questions: int
@@ -253,6 +258,12 @@ async def get_config():
         "chat_model": CHAT_MODEL,
         "embed_model": EMBED_MODEL,
     }
+
+@app.post("/api/notes")
+async def save_note(request: NoteRequest):
+    from src.features.validator import store_note
+    result = store_note(request.text, request.source_label, request.bypass_validation)
+    return result
 
 if __name__ == "__main__":
     import uvicorn

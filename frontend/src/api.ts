@@ -112,4 +112,15 @@ export const getQuizWeakAreas = async (document: string) => {
   const { data } = await api.get(`/quiz/weak_areas?document=${encodeURIComponent(document)}`);
   return data.analysis;
 };
-
+export const saveNote = async (
+  text: string,
+  sourceLabel: string,
+  bypassValidation: boolean = false
+) => {
+  const { data } = await api.post("/notes", {
+    text,
+    source_label: sourceLabel,
+    bypass_validation: bypassValidation,
+  });
+  return data;
+};
