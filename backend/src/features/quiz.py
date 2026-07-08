@@ -15,7 +15,15 @@ def generate_questions(source_filename, n=10, q_type="mixed"):
     if len(text) > 10000:
         text = text[:10000]
         
-    prompt = f"Target Number of Questions: {n}\nQuestion Type: {q_type}\n\nText:\n{text}"
+    q_type_lower = q_type.strip().lower()
+    if q_type_lower in ["true/false", "truefalse", "t/f"]:
+        type_instruction = "ALL questions MUST be truefalse type. Phrase each question as a clear statement that can be judged True or False. Never use 'what', 'which', 'how', or 'who' questions for truefalse."
+    elif q_type_lower in ["multiple choice", "mcq"]:
+        type_instruction = "ALL questions MUST be mcq type with exactly 4 options each."
+    else:
+        type_instruction = "Use a mix of mcq and truefalse types. For truefalse, phrase questions as clear statements. For mcq, provide exactly 4 options."
+
+    prompt = f"Target Number of Questions: {n}\nQuestion Type Instruction: {type_instruction}\n\nText:\n{text}"
     system_prompt_adapted = QUIZ_PROMPT.replace("exactly N", f"exactly {n}")
     
     result = llm.generate_json(prompt=prompt, system_prompt=system_prompt_adapted)
