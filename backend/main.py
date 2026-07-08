@@ -157,21 +157,39 @@ async def ask_question(request: AskRequest):
 async def search(question: str = Form(...), top_k: int = Form(5), filter_source: Optional[str] = Form(None)):
     if filter_source == "All Documents":
         filter_source = None
-    results = database.query(question, top_k=top_k, filter_source=filter_source)
+        
+    # Query more chunks to allow for deduplication while still returning up to top_k results
+    query_k = top_k * 5
+    results = database.query(question, top_k=query_k, filter_source=filter_source)
     
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
     distances = results["distances"][0] if "distances" in results else [None] * len(documents)
     
+    seen_sources = set()
     response_data = []
     for doc_text, meta, dist in zip(documents, metadatas, distances):
+        source = meta.get("source", "Unknown")
+        if source in seen_sources:
+            continue
+        seen_sources.add(source)
+        
         relevance = max(0, min(100, int((1 - dist / 2) * 100))) if dist is not None else 50
+        
+        # Filter out low-relevance noise (unrelated documents often score 50-70%)
+        if relevance < 75:
+            continue
+            
         response_data.append({
             "text": doc_text,
-            "source": meta.get("source", "Unknown"),
+            "source": source,
             "page": meta.get("page", "?"),
             "relevance": relevance
         })
+        
+        if len(response_data) >= top_k:
+            break
+            
     return {"results": response_data}
 
 @app.post("/api/summarize")
@@ -223,6 +241,18 @@ async def quiz_save_score(document: str = Form(...), correct_count: int = Form(.
 @app.get("/api/quiz/weak_areas")
 async def get_quiz_weak_areas(document: str):
     return {"analysis": get_weak_areas(document)}
+
+@app.get("/api/config")
+async def get_config():
+    from src.config import OLLAMA_URL, CHUNK_SIZE, CHUNK_OVERLAP, TOP_K, CHAT_MODEL, EMBED_MODEL
+    return {
+        "ollama_url": OLLAMA_URL,
+        "chunk_size": CHUNK_SIZE,
+        "chunk_overlap": CHUNK_OVERLAP,
+        "top_k": TOP_K,
+        "chat_model": CHAT_MODEL,
+        "embed_model": EMBED_MODEL,
+    }
 
 if __name__ == "__main__":
     import uvicorn
