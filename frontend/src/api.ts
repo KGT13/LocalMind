@@ -11,6 +11,11 @@ export const getKbStats = async () => {
   return data;
 };
 
+export const getConfig = async () => {
+  const { data } = await api.get("/config");
+  return data;
+};
+
 export const getDocuments = async () => {
   const { data } = await api.get("/documents");
   return data.documents;
@@ -107,3 +112,4 @@ export const getQuizWeakAreas = async (document: string) => {
   const { data } = await api.get(`/quiz/weak_areas?document=${encodeURIComponent(document)}`);
   return data.analysis;
 };
+

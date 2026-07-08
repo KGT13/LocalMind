@@ -51,7 +51,7 @@ export default function Quiz() {
     try {
       const res = await gradeQuizAnswer(questions[currentQIndex], userAnswer);
       setGradeResult(res);
-      if (res.is_correct) {
+      if (res.correct) {
         setScore(prev => prev + 1);
       }
     } catch (err: any) {
@@ -133,7 +133,7 @@ export default function Quiz() {
                 >
                   <option>Multiple Choice</option>
                   <option>True/False</option>
-                  <option>Short Answer</option>
+                  <option>Mixed</option>
                 </select>
               </div>
             </div>
@@ -178,31 +178,21 @@ export default function Quiz() {
 
           {!gradeResult ? (
             <div className="space-y-4">
-              {currentQ.options ? (
-                <div className="grid gap-3">
-                  {currentQ.options.map((opt: string, i: number) => (
-                    <button
-                      key={i}
-                      onClick={() => setUserAnswer(opt)}
-                      className={`text-left p-4 rounded-xl border transition-all ${
-                        userAnswer === opt 
-                          ? "border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent)] font-medium" 
-                          : "border-[var(--border)] hover:border-[var(--accent)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <textarea
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Type your answer here..."
-                  rows={4}
-                  className="w-full p-4 bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border)] rounded-xl outline-none focus:border-[var(--accent)] transition-colors resize-none"
-                />
-              )}
+              <div className="grid gap-3">
+                {(currentQ.options ?? []).map((opt: string, i: number) => (
+                  <button
+                    key={i}
+                    onClick={() => setUserAnswer(opt)}
+                    className={`text-left p-4 rounded-xl border transition-all ${
+                      userAnswer === opt 
+                        ? "border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent)] font-medium" 
+                        : "border-[var(--border)] hover:border-[var(--accent)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
               
               <button
                 onClick={submitAnswer}
@@ -215,14 +205,14 @@ export default function Quiz() {
           ) : (
             <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
               <div className={`p-5 rounded-xl border flex items-start gap-4 ${
-                gradeResult.is_correct 
+                gradeResult.correct 
                   ? "bg-[var(--success-bg)] border-[var(--success-border)] text-[var(--success-text)]"
                   : "bg-[var(--danger-bg)] border-[var(--danger-border)] text-[var(--danger-text)]"
               }`}>
-                {gradeResult.is_correct ? <CheckCircle className="w-6 h-6 mt-0.5 shrink-0" /> : <XCircle className="w-6 h-6 mt-0.5 shrink-0" />}
+                {gradeResult.correct ? <CheckCircle className="w-6 h-6 mt-0.5 shrink-0" /> : <XCircle className="w-6 h-6 mt-0.5 shrink-0" />}
                 <div>
-                  <h3 className="font-bold text-lg mb-1">{gradeResult.is_correct ? "Correct!" : "Incorrect"}</h3>
-                  <p className="opacity-90">{gradeResult.explanation}</p>
+                  <h3 className="font-bold text-lg mb-1">{gradeResult.correct ? "Correct!" : "Incorrect"}</h3>
+                  <p className="opacity-90">{gradeResult.explanation ?? gradeResult.feedback}</p>
                 </div>
               </div>
               

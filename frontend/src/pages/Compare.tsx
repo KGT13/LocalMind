@@ -111,43 +111,58 @@ export default function Compare() {
 
       {comparison && (
         <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+          {/* Claims Overview */}
           <div className="glass-card">
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6 border-b border-[var(--border)] pb-4 flex items-center gap-2">
-              <CheckCircle className="text-[var(--success-text)] w-6 h-6" /> Key Similarities
+              <CheckCircle className="text-[var(--success-text)] w-6 h-6" /> Claims Overview
             </h2>
-            <div className="prose dark:prose-invert max-w-none">
-              <ul className="space-y-2">
-                {comparison.similarities.map((item: string, i: number) => (
-                  <li key={i} className="text-[var(--text-secondary)] bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)]">
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-[var(--bg-secondary)] p-4 rounded-xl border border-[var(--border)]">
+                <p className="text-sm font-semibold text-[var(--text-secondary)] mb-1">Document A</p>
+                <p className="text-lg font-bold text-[var(--text-primary)]">{comparison.source_a}</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">{comparison.total_claims_a} claims extracted</p>
+              </div>
+              <div className="bg-[var(--bg-secondary)] p-4 rounded-xl border border-[var(--border)]">
+                <p className="text-sm font-semibold text-[var(--text-secondary)] mb-1">Document B</p>
+                <p className="text-lg font-bold text-[var(--text-primary)]">{comparison.source_b}</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">{comparison.total_claims_b} claims extracted</p>
+              </div>
             </div>
           </div>
           
+          {/* Contradictions */}
           <div className="glass-card">
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6 border-b border-[var(--border)] pb-4 flex items-center gap-2">
-              <GitCompare className="text-[var(--warning-text)] w-6 h-6" /> Key Differences
+              <GitCompare className="text-[var(--warning-text)] w-6 h-6" /> Contradictions Found ({comparison.contradictions?.length ?? 0})
             </h2>
-            <div className="prose dark:prose-invert max-w-none">
-              <ul className="space-y-2">
-                {comparison.differences.map((item: string, i: number) => (
-                  <li key={i} className="text-[var(--text-secondary)] bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)]">
-                    {item}
-                  </li>
+            {comparison.contradictions && comparison.contradictions.length > 0 ? (
+              <div className="space-y-4">
+                {comparison.contradictions.map((item: any, i: number) => (
+                  <div key={i} className="bg-[var(--bg-secondary)] p-5 rounded-xl border border-[var(--border)] space-y-3">
+                    <div className="flex items-start gap-3">
+                      <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-[var(--danger-bg)] border border-[var(--danger-border)] text-[var(--danger-text)] flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                      <div className="space-y-2 flex-1">
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Document A</p>
+                          <p className="text-[var(--text-primary)] font-medium">{item.claim_a}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Document B</p>
+                          <p className="text-[var(--text-primary)] font-medium">{item.claim_b}</p>
+                        </div>
+                        {item.explanation && (
+                          <div className="pt-2 border-t border-[var(--border)]">
+                            <p className="text-sm text-[var(--text-secondary)] italic">{item.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          </div>
-          
-          <div className="glass-card">
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6 border-b border-[var(--border)] pb-4">
-              Detailed Summary
-            </h2>
-            <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap text-[var(--text-secondary)] leading-relaxed">
-              {comparison.summary}
-            </div>
+              </div>
+            ) : (
+              <p className="text-[var(--text-secondary)] text-center py-6">No contradictions found between these documents.</p>
+            )}
           </div>
         </div>
       )}

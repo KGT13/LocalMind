@@ -2,6 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquare, Send, Bot, User, FileText, Loader2 } from "lucide-react";
 import { getDocuments } from "../api";
 import { useSearchParams } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 type Message = {
   role: "user" | "assistant";
@@ -156,8 +160,17 @@ export default function Ask() {
                   : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-tl-sm'
               }`}>
                 {msg.content ? (
-                  <div className="prose dark:prose-invert prose-p:leading-relaxed max-w-none prose-sm sm:prose-base whitespace-pre-wrap">
-                    {msg.content}
+                  <div className="prose dark:prose-invert prose-p:leading-relaxed max-w-none prose-sm sm:prose-base overflow-x-auto">
+                    {msg.role === 'assistant' ? (
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkMath]} 
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 h-6">
