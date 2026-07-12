@@ -124,7 +124,26 @@ async def upload_text(title: str = Form(...), content: str = Form(...)):
 async def ask_question(request: AskRequest):
     async def event_generator():
         retrieved_chunk = retrieval.retrieve_chunks(request.question, filter_source=request.filter_source)
+        
+          # ── NEW: filter out weakly-relevant chunks before building context ──
+        distances = retrieved_chunk["distances"][0] if "distances" in retrieved_chunk else []
+        documents = retrieved_chunk["documents"][0]
+        metadatas = retrieved_chunk["metadatas"][0]
+        
+        filtered_docs, filtered_metas = [], []
+        for doc, meta, dist in zip(documents, metadatas, distances):
+            relevance = max(0, min(100, int((1 - dist / 2) * 100))) if dist is not None else 50
+            if relevance >= 75:
+                filtered_docs.append(doc)
+                filtered_metas.append(meta)
+        
+        # Rebuild retrieved_chunk in the same shape build_context expects
+        retrieved_chunk = {"documents": [filtered_docs], "metadatas": [filtered_metas]}
         context = retrieval.build_context(retrieved_chunk)
+        
+        if not filtered_docs:
+            context = "No relevant information was found in your knowledge base for this question."
+        
 
         if request.conversation_history:
             from src.core.prompts import RAG_FOLLOWUP_SYSTEM_PROMPT
