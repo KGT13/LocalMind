@@ -2,6 +2,7 @@ import json
 import os
 import datetime
 from src.infrastructure import llm
+from src.core.schemas import QuizQuestionsList, GradeResult
 from src.core import retrieval
 from src.config import SCORES_PATH
 from src.core.prompts import QUIZ_PROMPT, QUIZ_GRADE_PROMPT
@@ -25,13 +26,13 @@ def generate_questions(source_filename, n=10, q_type="mixed"):
 
     prompt = f"Target Number of Questions: {n}\nQuestion Type Instruction: {type_instruction}\n\nText:\n{text}"
     system_prompt_adapted = QUIZ_PROMPT.replace("exactly N", f"exactly {n}")
-    
-    result = llm.generate_json(prompt=prompt, system_prompt=system_prompt_adapted)
-    
+
+    result = llm.generate_json(prompt=prompt, system_prompt=system_prompt_adapted, schema=QuizQuestionsList.model_json_schema())
+
     if result is None:
         return []
-        
-    return result
+
+    return result["questions"]
 
 def check_answer(question_obj, user_answer):
     q_type = question_obj.get("type", "")
@@ -45,7 +46,7 @@ def check_answer(question_obj, user_answer):
         }
     else:
         prompt = f"Correct Answer: {correct_ans}\nStudent's Answer: {user_answer}"
-        result = llm.generate_json(prompt=prompt, system_prompt=QUIZ_GRADE_PROMPT)
+        result = llm.generate_json(prompt=prompt, system_prompt=QUIZ_GRADE_PROMPT, schema=GradeResult.model_json_schema())
         if result is None:
             # Fallback string containment check
             user_str = str(user_answer).strip().lower()
