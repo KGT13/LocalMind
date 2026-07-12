@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://localhost:8000/api";
+export const API_BASE = "http://localhost:8000/api";
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -15,6 +15,22 @@ export const getConfig = async () => {
   const { data } = await api.get("/config");
   return data;
 };
+
+export const getModels = async () => {
+  const { data } = await api.get("/models");
+  return data;
+};
+
+export const switchModel = async (modelName: string) => {
+  const { data } = await api.post("/models/switch", { model_name: modelName });
+  return data;
+};
+
+export const pullModel = async (modelName: string) => {
+  const { data } = await api.post("/models/pull", { model_name: modelName });
+  return data;
+};
+
 
 export const getDocuments = async () => {
   const { data } = await api.get("/documents");

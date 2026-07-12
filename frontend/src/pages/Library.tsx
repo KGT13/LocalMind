@@ -28,7 +28,7 @@ export default function Library() {
       await deleteDocument(filename);
       fetchDocs();
     } catch (err: any) {
-      alert("Error deleting document: " + err.message);
+      setError("Error deleting document: " + err.message);
     } finally {
       setDeleting(null);
     }

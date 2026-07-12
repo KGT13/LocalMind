@@ -1,13 +1,18 @@
 import { useEffect, useState, useRef } from "react";
 import { FileText, Wand2, Loader2, AlertCircle } from "lucide-react";
-import { getDocuments } from "../api";
+import { getDocuments, API_BASE } from "../api";
+import { useStore } from "../store";
 
 export default function Summarize() {
   const [docs, setDocs] = useState<{name: string}[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState("");
-  const [instruction, setInstruction] = useState("Provide a comprehensive summary of this document, highlighting the key points, main arguments, and conclusions.");
-  
-  const [summary, setSummary] = useState("");
+  const {
+    summarizeSelectedDoc: selectedDoc,
+    setSummarizeSelectedDoc: setSelectedDoc,
+    summarizeInstruction: instruction,
+    setSummarizeInstruction: setInstruction,
+    summarizeResult: summary,
+    setSummarizeResult: setSummary
+  } = useStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -16,7 +21,8 @@ export default function Summarize() {
   useEffect(() => {
     getDocuments().then(data => {
       setDocs(data);
-      if (data.length > 0) setSelectedDoc(data[0].name);
+      if (data.length > 0 && !selectedDoc) setSelectedDoc(data[0].name);
+      if (!instruction) setInstruction("Provide a comprehensive summary of this document, highlighting the key points, main arguments, and conclusions.");
     }).catch(console.error);
   }, []);
 
@@ -28,7 +34,7 @@ export default function Summarize() {
     setError(null);
     
     try {
-      const res = await fetch("http://localhost:8000/api/summarize", {
+      const res = await fetch(`${API_BASE}/summarize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,17 +43,20 @@ export default function Summarize() {
         })
       });
 
+      if (!res.ok) throw new Error("Failed to fetch response");
       if (!res.body) throw new Error("No response body");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       
       let done = false;
+      let buffer = "";
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
+          buffer += decoder.decode(value, { stream: !done });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
           for (const line of lines) {
             if (line.startsWith("data:")) {
               const dataStr = line.replace("data:", "").trim();
@@ -58,7 +67,7 @@ export default function Summarize() {
               try {
                 const data = JSON.parse(dataStr);
                 if (data.text) {
-                  setSummary(prev => prev + data.text);
+                  useStore.setState((state) => ({ summarizeResult: state.summarizeResult + data.text }));
                   summaryEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
                 }
               } catch (e) {

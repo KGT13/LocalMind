@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, Send, Bot, User, FileText, Loader2 } from "lucide-react";
-import { getDocuments } from "../api";
+import { MessageSquare, Send, Bot, User, FileText, Loader2, AlertCircle } from "lucide-react";
+import { getDocuments, API_BASE } from "../api";
 import { useSearchParams } from "react-router-dom";
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { useStore } from '../store';
 
 type Message = {
   role: "user" | "assistant";
@@ -17,14 +18,26 @@ export default function Ask() {
   const [searchParams] = useSearchParams();
   const initialDoc = searchParams.get("doc");
   
+  const { 
+    askMessages: messages, 
+    setAskMessages: setMessages,
+    askFilterSource: filterSource,
+    setAskFilterSource: setFilterSource
+  } = useStore();
+
   const [docs, setDocs] = useState<{name: string}[]>([]);
-  const [filterSource, setFilterSource] = useState<string>(initialDoc || "All Documents");
   
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi there! Ask me anything about your knowledge base." }
-  ]);
+  useEffect(() => {
+    if (initialDoc && filterSource === "All Documents") {
+      setFilterSource(initialDoc);
+    }
+    if (messages.length === 0) {
+      setMessages([{ role: "assistant", content: "Hi there! Ask me anything about your knowledge base." }]);
+    }
+  }, [initialDoc]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,37 +54,44 @@ export default function Ask() {
 
     const userMsg = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    const newMessages = [...messages, { role: "user", content: userMsg } as Message];
+    setMessages(newMessages);
     setIsTyping(true);
 
     try {
+      setError(null);
       // Add a placeholder message for the assistant
-      setMessages(prev => [...prev, { role: "assistant", content: "", sources: [] }]);
+      setMessages([...newMessages, { role: "assistant", content: "", sources: [] } as Message]);
       
-      const res = await fetch("http://localhost:8000/api/ask", {
+      const res = await fetch(`${API_BASE}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question: userMsg,
           filter_source: filterSource === "All Documents" ? null : filterSource,
-          conversation_history: messages.map(m => ({
+          conversation_history: newMessages.map(m => ({
             role: m.role, 
             content: m.content
           }))
         })
       });
 
+      if (!res.ok) throw new Error("Failed to fetch response");
       if (!res.body) throw new Error("No response body");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       
       let done = false;
+      let buffer = "";
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
+          buffer += decoder.decode(value, { stream: !done });
+          const lines = buffer.split("\n");
+          // Keep the last partial line in the buffer
+          buffer = lines.pop() || "";
+          
           for (const line of lines) {
             if (line.startsWith("data:")) {
               const dataStr = line.replace("data:", "").trim();
@@ -82,8 +102,8 @@ export default function Ask() {
               try {
                 const data = JSON.parse(dataStr);
                 // Update the last message in state
-                setMessages(prev => {
-                  const newMsgs = [...prev];
+                useStore.setState((state) => {
+                  const newMsgs = [...state.askMessages];
                   const lastIdx = newMsgs.length - 1;
                   
                   // Check if it's sources array or text chunk
@@ -95,7 +115,7 @@ export default function Ask() {
                       content: newMsgs[lastIdx].content + data.text 
                     };
                   }
-                  return newMsgs;
+                  return { askMessages: newMsgs };
                 });
               } catch (e) {
                 console.error("Parse error", e);
@@ -104,12 +124,14 @@ export default function Ask() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setMessages(prev => {
-        const newMsgs = [...prev];
-        newMsgs[newMsgs.length - 1].content = "Sorry, an error occurred while generating the response.";
-        return newMsgs;
+      setError(err.message);
+      useStore.setState((state) => {
+        const newMsgs = [...state.askMessages];
+        const lastIdx = newMsgs.length - 1;
+        newMsgs[lastIdx] = { ...newMsgs[lastIdx], content: "Sorry, an error occurred while generating the response." };
+        return { askMessages: newMsgs };
       });
     } finally {
       setIsTyping(false);
@@ -140,6 +162,13 @@ export default function Ask() {
           </select>
         </div>
       </div>
+
+      {error && (
+        <div className="mx-4 sm:mx-8 mt-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 shrink-0 shadow-sm">
+          <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 bg-transparent">

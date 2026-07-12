@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
 import { GitCompare, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { getDocuments, compareDocs } from "../api";
+import { useStore } from "../store";
 
 export default function Compare() {
   const [docs, setDocs] = useState<{name: string}[]>([]);
-  const [docA, setDocA] = useState("");
-  const [docB, setDocB] = useState("");
-  
-  const [comparison, setComparison] = useState<any>(null);
+  const {
+    compareDocA: docA,
+    setCompareDocA: setDocA,
+    compareDocB: docB,
+    setCompareDocB: setDocB,
+    compareResult: comparison,
+    setCompareResult: setComparison
+  } = useStore();
   const [isComparing, setIsComparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getDocuments().then(data => {
       setDocs(data);
-      if (data.length >= 2) {
+      if (data.length >= 2 && !docA && !docB) {
         setDocA(data[0].name);
         setDocB(data[1].name);
       }

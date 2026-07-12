@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Settings as SettingsIcon, Server, Database, Brain, Cpu, ShieldCheck } from "lucide-react";
-import { getConfig } from "../api";
+import { Settings as SettingsIcon, Server, Database, Brain, Cpu, ShieldCheck, Loader2 } from "lucide-react";
+import { getConfig, switchModel } from "../api";
 
 interface Config {
   ollama_url: string;
@@ -9,11 +9,14 @@ interface Config {
   top_k: number;
   chat_model: string;
   embed_model: string;
+  available_models: string[];
 }
 
 export default function Settings() {
   const [config, setConfig] = useState<Config | null>(null);
   const [error, setError] = useState("");
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [switchStatus, setSwitchStatus] = useState("");
 
   useEffect(() => {
     getConfig()
@@ -63,13 +66,43 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)]">
-              <div className="w-12 h-12 rounded-full bg-[var(--accent-bg)] flex items-center justify-center text-[var(--accent)]">
-                <Brain className="w-6 h-6" />
+            <div className="flex items-center gap-4 p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] relative">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent-bg)] flex items-center justify-center text-[var(--accent)] shrink-0">
+                {isSwitching ? <Loader2 className="w-6 h-6 animate-spin" /> : <Brain className="w-6 h-6" />}
               </div>
-              <div>
+              <div className="flex-1 w-full min-w-0">
                 <p className="text-sm font-semibold text-[var(--text-secondary)]">LLM Generation Model</p>
-                <p className="font-bold text-[var(--text-primary)]">{config?.chat_model ?? "..."}</p>
+                <select
+                  value={config?.chat_model || ""}
+                  onChange={async (e) => {
+                    const newModel = e.target.value;
+                    if (!config || newModel === config.chat_model) return;
+                    setIsSwitching(true);
+                    setSwitchStatus(`Downloading and switching to ${newModel}... This may take a few minutes.`);
+                    setError("");
+                    try {
+                      await switchModel(newModel);
+                      setConfig({ ...config, chat_model: newModel });
+                      setSwitchStatus("Successfully switched model!");
+                      setTimeout(() => setSwitchStatus(""), 3000);
+                    } catch (err: any) {
+                      setError(err.response?.data?.detail || err.message);
+                      setSwitchStatus("");
+                    } finally {
+                      setIsSwitching(false);
+                    }
+                  }}
+                  disabled={!config || isSwitching}
+                  className="mt-1 w-full p-2 bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50 text-sm font-bold truncate"
+                >
+                  {config?.available_models ? (
+                    config.available_models.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))
+                  ) : (
+                    <option value={config?.chat_model || ""}>{config?.chat_model || "..."}</option>
+                  )}
+                </select>
               </div>
             </div>
 
@@ -83,6 +116,12 @@ export default function Settings() {
               </div>
             </div>
           </div>
+          
+          {switchStatus && (
+            <div className="mt-4 p-3 bg-[var(--success-bg)] text-[var(--success-text)] border border-[var(--success-border)] rounded-xl text-sm font-medium">
+              {switchStatus}
+            </div>
+          )}
         </div>
 
         {/* Privacy Promise */}

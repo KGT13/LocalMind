@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
 import { Search as SearchIcon, FileText, Filter, Loader2, AlertCircle } from "lucide-react";
 import { getDocuments, searchDocuments } from "../api";
+import { useStore } from "../store";
 
 export default function Search() {
   const [docs, setDocs] = useState<{name: string}[]>([]);
-  const [query, setQuery] = useState("");
-  const [filterSource, setFilterSource] = useState("All Documents");
-  const [topK, setTopK] = useState(5);
   
-  const [results, setResults] = useState<any[]>([]);
+  const {
+    searchQuery: query,
+    setSearchQuery: setQuery,
+    searchFilterSource: filterSource,
+    setSearchFilterSource: setFilterSource,
+    searchTopK: topK,
+    setSearchTopK: setTopK,
+    searchResults: results,
+    setSearchResults: setResults,
+  } = useStore();
+
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +110,14 @@ export default function Search() {
       )}
 
       {/* Results */}
+      {!isSearching && results.length === 0 && query && !error && (
+        <div className="p-8 text-center glass-card animate-in fade-in">
+          <FileText className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-3 opacity-50" />
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">No results found</h3>
+          <p className="text-[var(--text-secondary)] mt-1">Try adjusting your search terms or filters.</p>
+        </div>
+      )}
+      
       {results.length > 0 && (
         <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
           <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)] flex items-center gap-2">

@@ -1,28 +1,52 @@
 import { useEffect, useState } from "react";
 import { BrainCircuit, Loader2, AlertCircle, CheckCircle, XCircle, Award } from "lucide-react";
 import { getDocuments, generateQuiz, gradeQuizAnswer, saveQuizScore, getQuizWeakAreas } from "../api";
+import { useStore } from "../store";
 
 export default function Quiz() {
   const [docs, setDocs] = useState<{name: string}[]>([]);
-  const [selectedDoc, setSelectedDoc] = useState("");
-  const [numQuestions, setNumQuestions] = useState(5);
-  const [qType, setQType] = useState("Multiple Choice");
   
-  const [quizState, setQuizState] = useState<"setup" | "generating" | "playing" | "results">("setup");
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [gradeResult, setGradeResult] = useState<any>(null);
+  const {
+    quizSelectedDoc: selectedDoc,
+    setQuizSelectedDoc: setSelectedDoc,
+    quizNumQuestions: numQuestions,
+    setQuizNumQuestions: setNumQuestions,
+    quizQType: qType,
+    setQuizQType: setQType,
+    quizState,
+    setQuizState,
+    quizQuestions: questions,
+    setQuizQuestions: setQuestions,
+    quizCurrentQIndex: currentQIndex,
+    setQuizCurrentQIndex: setCurrentQIndex,
+    quizAnswers: userAnswers,
+    setQuizAnswers: setUserAnswers,
+    quizScore: scoreObj,
+    setQuizScore: setScoreObj,
+    quizWeakAreas: weakAreas,
+    setQuizWeakAreas: setWeakAreas
+  } = useStore();
+
+  // Local state for UI only
+  const [userAnswer, setUserAnswer] = useState(""); // The currently selected option before submit
+  const [gradeResult, setGradeResult] = useState<any>(null); // The result of the current question
   const [isGrading, setIsGrading] = useState(false);
-  const [score, setScore] = useState(0);
-  
-  const [weakAreas, setWeakAreas] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Derived score
+  const score = scoreObj ? scoreObj.correct : 0;
+  
+  // Set current user answer from store if exists
+  useEffect(() => {
+    if (quizState === "playing") {
+        setUserAnswer(userAnswers[currentQIndex] || "");
+        // If they already answered, we don't show grade result since it's transient
+    }
+  }, [currentQIndex, quizState]);
   useEffect(() => {
     getDocuments().then(data => {
       setDocs(data);
-      if (data.length > 0) setSelectedDoc(data[0].name);
+      if (data.length > 0 && !selectedDoc) setSelectedDoc(data[0].name);
     }).catch(console.error);
   }, []);
 
@@ -35,9 +59,10 @@ export default function Quiz() {
       if (!q || q.length === 0) throw new Error("Could not generate questions.");
       setQuestions(q);
       setCurrentQIndex(0);
-      setScore(0);
+      setScoreObj({ correct: 0, total: q.length });
       setGradeResult(null);
       setUserAnswer("");
+      setUserAnswers({});
       setQuizState("playing");
     } catch (err: any) {
       setError(err.message);
@@ -48,14 +73,16 @@ export default function Quiz() {
   const submitAnswer = async () => {
     if (!userAnswer.trim()) return;
     setIsGrading(true);
+    setError(null);
     try {
       const res = await gradeQuizAnswer(questions[currentQIndex], userAnswer);
       setGradeResult(res);
+      setUserAnswers({ ...userAnswers, [currentQIndex]: userAnswer });
       if (res.correct) {
-        setScore(prev => prev + 1);
+        setScoreObj({ correct: (scoreObj?.correct || 0) + 1, total: scoreObj?.total || questions.length });
       }
     } catch (err: any) {
-      alert("Error grading answer: " + err.message);
+      setError("Error grading answer: " + err.message);
     } finally {
       setIsGrading(false);
     }
@@ -63,7 +90,7 @@ export default function Quiz() {
 
   const nextQuestion = () => {
     if (currentQIndex < questions.length - 1) {
-      setCurrentQIndex(prev => prev + 1);
+      setCurrentQIndex(currentQIndex + 1);
       setGradeResult(null);
       setUserAnswer("");
     } else {
@@ -73,12 +100,13 @@ export default function Quiz() {
 
   const finishQuiz = async () => {
     setQuizState("results");
+    setError(null);
     try {
       await saveQuizScore(selectedDoc, score, questions.length);
       const weak = await getQuizWeakAreas(selectedDoc);
       setWeakAreas(weak);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setError("Error saving results: " + err.message);
     }
   };
 
@@ -172,6 +200,12 @@ export default function Quiz() {
         </div>
 
         <div className="glass-card">
+          {error && (
+            <div className="mb-4 p-4 bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-xl flex items-start gap-3 text-[var(--danger-text)]">
+              <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
           <p className="text-lg md:text-xl font-semibold text-[var(--text-primary)] leading-relaxed mb-6">
             {currentQ.question}
           </p>
@@ -239,6 +273,13 @@ export default function Quiz() {
       <p className="text-xl text-[var(--text-secondary)] mb-8">
         You scored <span className="font-bold text-[var(--accent)]">{score}</span> out of {questions.length}
       </p>
+
+      {error && (
+        <div className="max-w-2xl mx-auto mb-4 p-4 bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-xl flex items-start gap-3 text-[var(--danger-text)] text-left">
+          <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
 
       {weakAreas && weakAreas !== "No weak areas detected yet!" && (
         <div className="glass-card text-left max-w-2xl mx-auto mb-8">
