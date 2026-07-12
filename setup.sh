@@ -87,8 +87,29 @@ else
     (ollama serve > /tmp/localmind_ollama.log 2>&1 &) 
 fi
 sleep 3
-ollama pull qwen3.5:9b
-ollama pull nomic-embed-text
+
+pushd backend >/dev/null
+MODEL_NAMES=$(python3 - <<'PY'
+from src.config import CHAT_MODEL, EMBED_MODEL
+print(CHAT_MODEL)
+print(EMBED_MODEL)
+PY
+)
+popd >/dev/null
+
+readarray -t MODELS <<< "$MODEL_NAMES"
+CHAT_MODEL="${MODELS[0]}"
+EMBED_MODEL="${MODELS[1]}"
+
+if [ -z "$CHAT_MODEL" ] || [ -z "$EMBED_MODEL" ]; then
+    echo "ERROR: Could not read CHAT_MODEL or EMBED_MODEL from backend/src/config.py"
+    exit 1
+fi
+
+echo "Pulling Ollama chat model: $CHAT_MODEL"
+ollama pull "$CHAT_MODEL"
+echo "Pulling Ollama embed model: $EMBED_MODEL"
+ollama pull "$EMBED_MODEL"
 
 # ── 6. Frontend dependencies ──────────────────────────────────────────────
 echo "[4/5] Installing frontend dependencies..."

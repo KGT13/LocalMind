@@ -1,7 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { SetupGuard } from './components/SetupGuard'
 import Dashboard from './pages/Dashboard'
 import Upload from './pages/Upload'
 import Library from './pages/Library'
@@ -15,8 +16,9 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
+    <HashRouter>
+      <SetupGuard>
+        <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="upload" element={<Upload />} />
@@ -29,6 +31,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </SetupGuard>
+    </HashRouter>
   </React.StrictMode>,
 )

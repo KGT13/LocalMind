@@ -93,8 +93,31 @@ if errorlevel 1 (
 
 REM ── 5. Ollama models ─────────────────────────────────────────────────
 echo [3/5] Pulling required AI models - this can take several minutes...
-ollama pull qwen3.5:9b
-ollama pull nomic-embed-text
+set "CHAT_MODEL="
+set "EMBED_MODEL="
+pushd backend >nul
+for /f "delims=" %%A in ('python -c "from src.config import CHAT_MODEL, EMBED_MODEL; print(CHAT_MODEL); print(EMBED_MODEL)"') do (
+    if not defined CHAT_MODEL (
+        set "CHAT_MODEL=%%A"
+    ) else (
+        set "EMBED_MODEL=%%A"
+    )
+)
+popd >nul
+if "%CHAT_MODEL%"=="" (
+    echo ERROR: Could not read CHAT_MODEL from backend\src\config.py
+    pause
+    exit /b 1
+)
+if "%EMBED_MODEL%"=="" (
+    echo ERROR: Could not read EMBED_MODEL from backend\src\config.py
+    pause
+    exit /b 1
+)
+echo Pulling Ollama chat model: %CHAT_MODEL%
+ollama pull %CHAT_MODEL%
+echo Pulling Ollama embed model: %EMBED_MODEL%
+ollama pull %EMBED_MODEL%
 
 REM ── 6. Frontend dependencies ─────────────────────────────────────────
 echo [4/5] Installing frontend dependencies...
