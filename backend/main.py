@@ -266,16 +266,79 @@ async def quiz_save_score(document: str = Form(...), correct_count: int = Form(.
 async def get_quiz_weak_areas(document: str):
     return {"analysis": get_weak_areas(document)}
 
+class ModelSwitchRequest(BaseModel):
+    model_name: str
+
+@app.get("/api/models")
+async def get_models():
+    from src.config import get_chat_model, AVAILABLE_CHAT_MODELS
+    return {
+        "current_model": get_chat_model(),
+        "available_models": AVAILABLE_CHAT_MODELS
+    }
+
+@app.get("/api/setup/status")
+async def get_setup_status():
+    import ollama
+    from src.config import get_chat_model, EMBED_MODEL
+    try:
+        # Check if Ollama is running and models exist
+        models = ollama.list()
+        model_names = [m.get("model", "") for m in models.get("models", [])]
+        
+        chat_model = get_chat_model()
+        chat_ready = any(chat_model in name for name in model_names)
+        embed_ready = any(EMBED_MODEL in name for name in model_names)
+        
+        return {
+            "ollama_running": True,
+            "chat_model_ready": chat_ready,
+            "embed_model_ready": embed_ready,
+            "chat_model": chat_model,
+            "embed_model": EMBED_MODEL
+        }
+    except Exception as e:
+        return {
+            "ollama_running": False,
+            "error": str(e)
+        }
+
+@app.post("/api/models/pull")
+async def pull_model(request: ModelSwitchRequest):
+    import ollama
+    try:
+        ollama.pull(request.model_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to pull model: {str(e)}")
+    return {"status": "success", "model": request.model_name}
+
+@app.post("/api/models/switch")
+async def switch_model(request: ModelSwitchRequest):
+    from src.config import set_chat_model, AVAILABLE_CHAT_MODELS
+    import ollama
+    
+    if request.model_name not in AVAILABLE_CHAT_MODELS:
+        raise HTTPException(status_code=400, detail="Model not supported")
+        
+    try:
+        ollama.pull(request.model_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to pull model: {str(e)}")
+        
+    set_chat_model(request.model_name)
+    return {"status": "success", "model": request.model_name}
+
 @app.get("/api/config")
 async def get_config():
-    from src.config import OLLAMA_URL, CHUNK_SIZE, CHUNK_OVERLAP, TOP_K, CHAT_MODEL, EMBED_MODEL
+    from src.config import OLLAMA_URL, CHUNK_SIZE, CHUNK_OVERLAP, TOP_K, get_chat_model, EMBED_MODEL, AVAILABLE_CHAT_MODELS
     return {
         "ollama_url": OLLAMA_URL,
         "chunk_size": CHUNK_SIZE,
         "chunk_overlap": CHUNK_OVERLAP,
         "top_k": TOP_K,
-        "chat_model": CHAT_MODEL,
+        "chat_model": get_chat_model(),
         "embed_model": EMBED_MODEL,
+        "available_models": AVAILABLE_CHAT_MODELS,
     }
 
 @app.post("/api/notes")
