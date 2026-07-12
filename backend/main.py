@@ -226,7 +226,7 @@ async def summarize(request: SummarizeRequest):
             all_text = all_text[:max_chars] + "\n\n[... content truncated for length ...]"
             
         from src.core.prompts import SUMMARY_PROMPT
-        prompt = f"{SUMMARY_PROMPT}\n\n{request.instruction}\n\nDocument: {request.document}\n\nContent:\n{all_text}"
+        prompt = f"Instruction: {request.instruction}\n\nDocument: {request.document}\n\nContent:\n{all_text}"
         
         response_stream = llm.generate_streaming(prompt, system_prompt=SUMMARY_PROMPT)
         import json
