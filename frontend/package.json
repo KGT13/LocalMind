@@ -16,7 +16,7 @@
     "appId": "com.localmind.app",
     "productName": "LocalMind",
     "directories": {
-      "output": "release"
+      "output": "../release"
     },
     "files": [
       "dist/**/*",

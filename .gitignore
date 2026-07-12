@@ -18,3 +18,4 @@ frontend/build/
 frontend/dist-electron/
 frontend/release/
 node_modules/
+release/
