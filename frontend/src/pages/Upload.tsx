@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { uploadFile, saveNote } from "../api";
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
 
@@ -15,8 +15,32 @@ export default function UploadPage() {
   
   // Progress state
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleFileSelection = (selectedFile: File | null) => {
+    if (!selectedFile) return;
+    setFile(selectedFile);
+    setError(null);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelection(e.dataTransfer.files?.[0] || null);
+  };
 
   const handleFileUpload = async () => {
     if (!file) return;
@@ -86,7 +110,13 @@ export default function UploadPage() {
       <div className="glass-card">
         {tab === "files" ? (
           <div className="space-y-6">
-            <div className="border-2 border-dashed border-[var(--border)] hover:border-[var(--accent)] rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-[var(--bg-secondary)] transition-colors group">
+            <div
+              className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-[var(--bg-secondary)] transition-colors group ${isDragging ? "border-[var(--accent)] bg-[var(--bg-card)]" : "border-[var(--border)] hover:border-[var(--accent)]"}`}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <Upload className="w-12 h-12 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors mb-4" />
               <p className="text-lg font-medium text-[var(--text-primary)] mb-2">
                 Click to browse or drag and drop
