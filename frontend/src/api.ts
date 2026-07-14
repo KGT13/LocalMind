@@ -38,7 +38,8 @@ export const getDocuments = async () => {
 };
 
 export const deleteDocument = async (filename: string) => {
-  const { data } = await api.delete(`/documents/${filename}`);
+  const encodedFilename = encodeURIComponent(filename);
+  const { data } = await api.delete(`/documents/${encodedFilename}`);
   return data;
 };
 

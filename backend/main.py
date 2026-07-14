@@ -75,7 +75,7 @@ async def get_documents():
         })
     return {"documents": result}
 
-@app.delete("/api/documents/{filename}")
+@app.delete("/api/documents/{filename:path}")
 async def delete_document(filename: str):
     ingestion.delete_document(filename)
     return {"status": "success", "message": f"{filename} deleted"}
