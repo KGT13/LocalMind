@@ -270,11 +270,13 @@ export default function UploadPage() {
           <div className={`mt-6 p-4 rounded-xl border flex items-start gap-3 ${
             result.message === "File already exist" 
               ? "bg-[var(--warning-bg)] border-[var(--warning-border)] text-[var(--warning-text)]" 
+              : result.message === "File not added"
+              ? "bg-[var(--danger-bg)] border-[var(--danger-border)] text-[var(--danger-text)]"
               : "bg-[var(--success-bg)] border-[var(--success-border)] text-[var(--success-text)]"
           }`}>
-            {result.message === "File already exist" ? <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />}
+            {result.message === "File already exist" || result.message === "File not added" ? <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />}
             <div>
-              <p className="font-semibold">{result.filename} processed</p>
+              <p className="font-semibold">{result.filename} {result.message === "File not added" ? "failed" : "processed"}</p>
               {result.chunks_stored > 0 && (
                 <p className="text-sm opacity-90 mt-1">
                   Pages: {result.pages} • Chunks stored: {result.chunks_stored}
@@ -282,6 +284,9 @@ export default function UploadPage() {
               )}
               {result.message === "File already exist" && (
                 <p className="text-sm opacity-90 mt-1">This file has already been ingested.</p>
+              )}
+              {result.message === "File not added" && (
+                <p className="text-sm opacity-90 mt-1">Failed to ingest file. It might contain no extractable text or an error occurred.</p>
               )}
             </div>
           </div>

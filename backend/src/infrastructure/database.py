@@ -23,9 +23,19 @@ def get_collections():
     return collection
 
 def add_chunks(chunks, metadata, ids):
+    if not chunks:
+        logger.warning("No chunks to add, skipping")
+        return
     collection = get_collections()
-    collection.add(documents=chunks, metadatas=metadata, ids=ids)
-    logger.info(f"Amount of chunks added to collection: {len(chunks)}")
+    # Batch to avoid Ollama embedding timeout on large documents
+    BATCH_SIZE = 20
+    for i in range(0, len(chunks), BATCH_SIZE):
+        batch_chunks = chunks[i:i + BATCH_SIZE]
+        batch_meta = metadata[i:i + BATCH_SIZE]
+        batch_ids = ids[i:i + BATCH_SIZE]
+        collection.add(documents=batch_chunks, metadatas=batch_meta, ids=batch_ids)
+        logger.info(f"Batch {i // BATCH_SIZE + 1}: added {len(batch_chunks)} chunks")
+    logger.info(f"Total chunks added to collection: {len(chunks)}")
 
 def query(question_text, top_k=TOP_K, filter_source=None):
     collection = get_collections()
